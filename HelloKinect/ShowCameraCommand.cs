@@ -15,12 +15,14 @@ namespace HelloKinect
     public class ShowCameraCommand : ConsoleCommand
     {
         static private Form EchoForm;
-        private bool UsePolling;
+        bool UsePolling;
+        private List<DateTime> FrameTimes;
 
         public ShowCameraCommand()
         {
             this.IsCommand("show-camera");
-            this.HasOption("p", "Use polling to check frame data", v => UsePolling = true);
+            
+            FrameTimes = new List<DateTime>();
         }
 
         public override int Run(string[] remainingArguments)
@@ -43,38 +45,18 @@ namespace HelloKinect
 
             sensor.ColorStream.Enable(ColorImageFormat.RawYuvResolution640x480Fps15);
 
-            if (!UsePolling)
-            {
-                sensor.ColorFrameReady += sensor_ColorFrameReady;
-            }
+            sensor.ColorFrameReady += sensor_ColorFrameReady;
 
             sensor.Start();
 
-            if (UsePolling)
-            {
-                Console.WriteLine("Use any key to exit.");
-                while (!Console.KeyAvailable)
-                {
-                    using (var frame = sensor.ColorStream.OpenNextFrame(10 * 1000))
-                    {
-                        HandleFrame(frame);
-                    }
-
-                    Thread.Sleep(50);
-                }
-            }
-            else
-            {
-                Console.WriteLine("Hit return to exit.");
-                Console.ReadLine();
-            }
+            Console.WriteLine("Running...");
+            Application.Run();
 
             return 0;
         }
 
         void sensor_ColorFrameReady(object sender, ColorImageFrameReadyEventArgs e)
         {
-            Console.WriteLine("Frame received");
             using (ColorImageFrame frame = e.OpenColorImageFrame())
             {
                 HandleFrame(frame);
@@ -88,7 +70,25 @@ namespace HelloKinect
             using (var g = EchoForm.CreateGraphics())
             {
                 g.DrawImage(bitmap, 0, 0);
-                Console.WriteLine("Frame drawn");
+            }
+
+            FrameTimes.Add(DateTime.Now);
+
+            if (FrameTimes.Count() > 10)
+            {
+                var reportedFrameTimes = FrameTimes.ToArray();
+                FrameTimes = new List<DateTime>();
+
+                TimeSpan sum = TimeSpan.FromMilliseconds(0);
+                var size = 0;
+
+                for (var i = 1; i < reportedFrameTimes.Length; i++)
+                {
+                    sum += reportedFrameTimes[i] - reportedFrameTimes[i - 1];
+                    size++;
+                }
+
+                Console.WriteLine("Frame time: {0:00} ms.", (sum.TotalMilliseconds / size));
             }
         }
 
