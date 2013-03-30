@@ -5,6 +5,7 @@ using System.Drawing.Imaging;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 using ManyConsole;
 using Microsoft.Kinect;
@@ -22,7 +23,9 @@ namespace HelloKinect
 
         public override int Run(string[] remainingArguments)
         {
-            if (KinectSensor.KinectSensors.Count() == 0)
+            var sensor = KinectSensor.KinectSensors.Where(s => s.Status == KinectStatus.Connected).FirstOrDefault();
+
+            if (sensor == null)
             {
                 Console.WriteLine("Kinect was not detected");
                 Console.WriteLine();
@@ -36,13 +39,14 @@ namespace HelloKinect
 
             EchoForm.Show();
 
-            var sensor = KinectSensor.KinectSensors[0];
-
             sensor.ColorStream.Enable(ColorImageFormat.RawYuvResolution640x480Fps15);
 
             sensor.ColorFrameReady += sensor_ColorFrameReady;
 
+            sensor.Start();
+
             Console.WriteLine("Hit return to exit.");
+            
             Console.ReadLine();
 
             return 0;
@@ -50,12 +54,16 @@ namespace HelloKinect
 
         void sensor_ColorFrameReady(object sender, ColorImageFrameReadyEventArgs e)
         {
-            ColorImageFrame frame = e.OpenColorImageFrame();
-            var bitmap = ImageToBitmap(frame);
-
-            using (var g = EchoForm.CreateGraphics())
+            Console.WriteLine("Frame received");
+            using (ColorImageFrame frame = e.OpenColorImageFrame())
             {
-                g.DrawImage(bitmap, 0, 0);
+                var bitmap = ImageToBitmap(frame);
+
+                using (var g = EchoForm.CreateGraphics())
+                {
+                    g.DrawImage(bitmap, 0, 0);
+                    Console.WriteLine("Frame drawn");
+                }
             }
         }
 
