@@ -27,21 +27,14 @@ namespace HelloKinect
 
         public override int Run(string[] remainingArguments)
         {
-            var sensor = KinectSensor.KinectSensors.Where(s => s.Status == KinectStatus.Connected).FirstOrDefault();
-
-            if (sensor == null)
-            {
-                Console.WriteLine("Kinect was not detected");
-                Console.WriteLine();
-                return -1;
-            }
-
             EchoForm = new Form();
 
             EchoForm.Width = 640;
             EchoForm.Height = 480;
 
             EchoForm.Show();
+
+            var sensor = KinectUtil.GetKinectSensor();
 
             sensor.ColorStream.Enable(ColorImageFormat.RawYuvResolution640x480Fps15);
 
