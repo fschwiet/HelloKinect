@@ -2,36 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Windows.Forms;
-using ManyConsole;
 using Microsoft.Kinect;
 using Newtonsoft.Json;
 
 namespace HelloKinect
 {
-    public class HelloSkeletonCommand : ConsoleCommand
+    public class HelloSkeletonCommand : SkeletonCommandBase
     {
         public HelloSkeletonCommand()
         {
             this.IsCommand("hello-skeleton");
         }
 
-        public override int Run(string[] remainingArguments)
-        {
-            var sensor = KinectUtil.GetKinectSensor();
-
-            sensor.SkeletonFrameReady += SkeletonFrameReady;
-
-            sensor.SkeletonStream.Enable();
-
-            sensor.Start();
-
-            Application.Run();
-
-            return 0;
-        }
-
-        void SkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
+        protected override void SkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
         {
             using (var skeleton = e.OpenSkeletonFrame())
             {
