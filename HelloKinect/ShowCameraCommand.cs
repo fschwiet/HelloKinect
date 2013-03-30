@@ -15,10 +15,12 @@ namespace HelloKinect
     public class ShowCameraCommand : ConsoleCommand
     {
         static private Form EchoForm;
+        private bool UsePolling;
 
         public ShowCameraCommand()
         {
             this.IsCommand("show-camera");
+            this.HasOption("p", "Use polling to check frame data", v => UsePolling = true);
         }
 
         public override int Run(string[] remainingArguments)
@@ -41,13 +43,31 @@ namespace HelloKinect
 
             sensor.ColorStream.Enable(ColorImageFormat.RawYuvResolution640x480Fps15);
 
-            sensor.ColorFrameReady += sensor_ColorFrameReady;
+            if (!UsePolling)
+            {
+                sensor.ColorFrameReady += sensor_ColorFrameReady;
+            }
 
             sensor.Start();
 
-            Console.WriteLine("Hit return to exit.");
-            
-            Console.ReadLine();
+            if (UsePolling)
+            {
+                Console.WriteLine("Use any key to exit.");
+                while (!Console.KeyAvailable)
+                {
+                    using (var frame = sensor.ColorStream.OpenNextFrame(10 * 1000))
+                    {
+                        HandleFrame(frame);
+                    }
+
+                    Thread.Sleep(50);
+                }
+            }
+            else
+            {
+                Console.WriteLine("Hit return to exit.");
+                Console.ReadLine();
+            }
 
             return 0;
         }
@@ -57,13 +77,18 @@ namespace HelloKinect
             Console.WriteLine("Frame received");
             using (ColorImageFrame frame = e.OpenColorImageFrame())
             {
-                var bitmap = ImageToBitmap(frame);
+                HandleFrame(frame);
+            }
+        }
 
-                using (var g = EchoForm.CreateGraphics())
-                {
-                    g.DrawImage(bitmap, 0, 0);
-                    Console.WriteLine("Frame drawn");
-                }
+        private void HandleFrame(ColorImageFrame frame)
+        {
+            var bitmap = ImageToBitmap(frame);
+
+            using (var g = EchoForm.CreateGraphics())
+            {
+                g.DrawImage(bitmap, 0, 0);
+                Console.WriteLine("Frame drawn");
             }
         }
 
