@@ -23,8 +23,9 @@ namespace HelloKinect
         {
             _displayForm = new Form();
 
-            _displayForm.Width = DrawWidth;
-            _displayForm.Height = DrawHeight;
+            var delta = _displayForm.Size - _displayForm.ClientSize;
+            
+            _displayForm.Size = new Size(DrawWidth + delta.Width, DrawHeight + delta.Height);
 
             _displayForm.Show();
 
@@ -74,8 +75,8 @@ namespace HelloKinect
 
         Dictionary<FrameEdges,Tuple<Point,Point>> EdgeHazardLights = new Dictionary<FrameEdges, Tuple<Point, Point>>()
         {
-            {FrameEdges.Bottom, new Tuple<Point, Point>(new Point(0,0), new Point(DrawWidth-1,0))},
-            {FrameEdges.Top, new Tuple<Point, Point>(new Point(0,DrawHeight-1), new Point(DrawWidth-1,DrawHeight-1))},
+            {FrameEdges.Top, new Tuple<Point, Point>(new Point(0,0), new Point(DrawWidth-1,0))},
+            {FrameEdges.Bottom, new Tuple<Point, Point>(new Point(0,DrawHeight -1), new Point(DrawWidth-1,DrawHeight-1))},
             {FrameEdges.Left, new Tuple<Point, Point>(new Point(0, DrawHeight-1), new Point(0,0))},
             {FrameEdges.Right, new Tuple<Point, Point>(new Point(DrawWidth-1,0),new Point(DrawWidth-1,DrawHeight-1))}
         };
@@ -87,7 +88,7 @@ namespace HelloKinect
                 if (EdgeHazardLights.ContainsKey(edge))
                 {
                     var coordinates = EdgeHazardLights[edge];
-                    graphics.DrawLine(new Pen(Color.Yellow, 20), coordinates.Item1, coordinates.Item2);
+                    graphics.DrawLine(new Pen(Color.Yellow, 40), coordinates.Item1, coordinates.Item2);
                 }
             }
         }
