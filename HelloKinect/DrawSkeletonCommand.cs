@@ -81,7 +81,7 @@ namespace HelloKinect
 
                     if (skele.TrackingState != SkeletonTrackingState.Tracked)
                     {
-                        Console.Write(".");
+                        graphics.DrawString("untracked", new Font(FontFamily.GenericSerif,40),new SolidBrush(Color.Coral), DrawWidth / 4, DrawHeight / 4);
                         return;
                     }
 
