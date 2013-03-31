@@ -27,14 +27,14 @@ namespace HelloKinect
             return 0;
         }
 
-        protected static Skeleton[] GetSkeletons(SkeletonFrame skeleton)
+        public static Skeleton[] GetSkeletons(SkeletonFrame skeleton)
         {
             Skeleton[] data = new Skeleton[skeleton.SkeletonArrayLength];
             skeleton.CopySkeletonDataTo(data);
             return data;
         }
 
-        protected static List<FrameEdges> GetClippedEdges(Skeleton skeleton)
+        public static List<FrameEdges> GetClippedEdges(Skeleton skeleton)
         {
             List<FrameEdges> clipped = new List<FrameEdges>();
 
