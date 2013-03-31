@@ -91,9 +91,9 @@ namespace HelloKinect
 
                     DrawClippedEdges(skele, graphics);
 
-                    DrawJointConnections(jointTypes, points, graphics);
-
                     DrawJoints(points, graphics);
+
+                    DrawJointConnections(jointTypes, points, graphics);
                 }
             }
             catch (Exception exception)
@@ -120,14 +120,16 @@ namespace HelloKinect
             {
                 if (point.Value.Item1.HasValue)
                 {
-                    graphics.FillEllipse(new SolidBrush(point.Value.Item1.Value), point.Value.Item2.X, point.Value.Item2.Y, 5,5);
+                    var radius = 15;
+                    graphics.FillEllipse(new SolidBrush(point.Value.Item1.Value), point.Value.Item2.X - radius, point.Value.Item2.Y - radius, radius * 2,radius * 2);
                 }
             }
         }
 
         private static void DrawJointConnections(IEnumerable<JointType> jointTypes, Dictionary<JointType, Tuple<Color?, DepthImagePoint>> points, Graphics graphics)
         {
-            var grayPen = new Pen(Color.Gray);
+            var widePen = new Pen(Color.White, 10);
+            var narrowPen = new Pen(Color.Black, 5);
 
             foreach (var startJoint in jointTypes)
             {
@@ -148,7 +150,8 @@ namespace HelloKinect
 
                     var endPoint = points[endJoint].Item2;
 
-                    graphics.DrawLine(grayPen, startPoint.X, startPoint.Y, endPoint.X, endPoint.Y);
+                    graphics.DrawLine(widePen, startPoint.X, startPoint.Y, endPoint.X, endPoint.Y);
+                    graphics.DrawLine(narrowPen, startPoint.X, startPoint.Y, endPoint.X, endPoint.Y);
                 }
             }
         }
