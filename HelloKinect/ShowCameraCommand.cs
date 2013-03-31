@@ -15,7 +15,7 @@ namespace HelloKinect
     public class ShowCameraCommand : ConsoleCommand
     {
         static private Form EchoForm;
-        public ColorImageFormat Format = ColorImageFormat.RawYuvResolution640x480Fps15;
+        public ColorImageFormat Format = ColorImageFormat.RgbResolution640x480Fps30;
         private List<DateTime> FrameTimes;
 
         public ShowCameraCommand()

@@ -36,7 +36,7 @@ namespace HelloKinect
 
         public override int Run(string[] remainingArguments)
         {
-            _displayForm = new Form();
+            _displayForm = new DoubleBufferedForm();
 
             var delta = _displayForm.Size - _displayForm.ClientSize;
             
@@ -76,10 +76,7 @@ namespace HelloKinect
 
                     var skele = data.FirstOrDefault();
 
-                    if (skele == null)
-                        return;
-
-                    if (skele.TrackingState != SkeletonTrackingState.Tracked)
+                    if (skele == null || skele.TrackingState != SkeletonTrackingState.Tracked)
                     {
                         graphics.DrawString("untracked", new Font(FontFamily.GenericSerif,40),new SolidBrush(Color.Coral), DrawWidth / 4, DrawHeight / 4);
                         return;
