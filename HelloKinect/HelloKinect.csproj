@@ -55,6 +55,7 @@
   <ItemGroup>
     <Compile Include="DrawSkeletonCommand.cs" />
     <Compile Include="HelloSkeletonCommand.cs" />
+    <Compile Include="JointStructure.cs" />
     <Compile Include="KinectUtil.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
