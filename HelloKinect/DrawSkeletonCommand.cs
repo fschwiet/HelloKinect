@@ -13,10 +13,25 @@ namespace HelloKinect
         protected Form _displayForm;
         const int DrawWidth = 640;
         const int DrawHeight = 480;
+        private const DepthImageFormat DepthImageFormat = Microsoft.Kinect.DepthImageFormat.Resolution640x480Fps30;
+        private const ColorImageFormat ColorImageFormat = Microsoft.Kinect.ColorImageFormat.RgbResolution640x480Fps30;
+
+        Dictionary<FrameEdges, Tuple<Point, Point>> EdgeHazardLights = new Dictionary<FrameEdges, Tuple<Point, Point>>()
+        {
+            {FrameEdges.Top, new Tuple<Point, Point>(new Point(0,0), new Point(DrawWidth-1,0))},
+            {FrameEdges.Bottom, new Tuple<Point, Point>(new Point(0,DrawHeight -1), new Point(DrawWidth-1,DrawHeight-1))},
+            {FrameEdges.Left, new Tuple<Point, Point>(new Point(0, DrawHeight-1), new Point(0,0))},
+            {FrameEdges.Right, new Tuple<Point, Point>(new Point(DrawWidth-1,0),new Point(DrawWidth-1,DrawHeight-1))}
+        };
 
         public DrawSkeletonCommand()
         {
             this.IsCommand("draw-skeleton");
+        }
+
+        protected override void AdditionalSensorSetup()
+        {
+            _sensor.ColorStream.Enable(ColorImageFormat);
         }
 
         public override int Run(string[] remainingArguments)
@@ -36,9 +51,28 @@ namespace HelloKinect
         {
             try
             {
+                Skeleton[] data;
+
                 using (var frame = e.OpenSkeletonFrame())
                 {
-                    var data = GetSkeletons(frame);
+                    if (frame == null)
+                        return;
+
+                    data = GetSkeletons(frame);
+                }
+
+                using (var graphics = _displayForm.CreateGraphics())
+                {
+                    using (var cameraFrame = _sensor.ColorStream.OpenNextFrame(10))
+                    {
+                        if (cameraFrame != null)
+                        {
+                            using (var bitmap = ShowCameraCommand.ImageToBitmap(cameraFrame))
+                            {
+                                graphics.DrawImage(bitmap, 0, 0, DrawWidth - 1, DrawHeight - 1);
+                            }
+                        }
+                    }
 
                     var skele = data.FirstOrDefault();
 
@@ -51,20 +85,15 @@ namespace HelloKinect
                         return;
                     }
 
-                    using (var graphics = _displayForm.CreateGraphics())
-                    {
-                        graphics.Clear(Color.Black);
+                    var jointTypes = Enum.GetValues(typeof (JointType)).Cast<JointType>();
 
-                        var jointTypes = Enum.GetValues(typeof (JointType)).Cast<JointType>();
+                    var points = ExtractScreenPoints(jointTypes, skele);
 
-                        var points = ExtractScreenPoints(jointTypes, skele);
+                    DrawClippedEdges(skele, graphics);
 
-                        DrawClippedEdges(skele, graphics);
+                    DrawJointConnections(jointTypes, points, graphics);
 
-                        DrawJointConnections(jointTypes, points, graphics);
-
-                        DrawJoints(points, graphics);
-                    }
+                    DrawJoints(points, graphics);
                 }
             }
             catch (Exception exception)
@@ -72,14 +101,6 @@ namespace HelloKinect
                 Console.WriteLine(exception);
             }
         }
-
-        Dictionary<FrameEdges,Tuple<Point,Point>> EdgeHazardLights = new Dictionary<FrameEdges, Tuple<Point, Point>>()
-        {
-            {FrameEdges.Top, new Tuple<Point, Point>(new Point(0,0), new Point(DrawWidth-1,0))},
-            {FrameEdges.Bottom, new Tuple<Point, Point>(new Point(0,DrawHeight -1), new Point(DrawWidth-1,DrawHeight-1))},
-            {FrameEdges.Left, new Tuple<Point, Point>(new Point(0, DrawHeight-1), new Point(0,0))},
-            {FrameEdges.Right, new Tuple<Point, Point>(new Point(DrawWidth-1,0),new Point(DrawWidth-1,DrawHeight-1))}
-        };
 
         private void DrawClippedEdges(Skeleton skele, Graphics graphics)
         {
@@ -154,7 +175,7 @@ namespace HelloKinect
                 }
 
                 DepthImagePoint position = _sensor.CoordinateMapper.MapSkeletonPointToDepthPoint(
-                    joint.Position, DepthImageFormat.Resolution640x480Fps30);
+                    joint.Position, DepthImageFormat);
                 points.Add(jointType, new Tuple<Color?, DepthImagePoint>(color, position));
             }
             return points;

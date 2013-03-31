@@ -20,6 +20,8 @@ namespace HelloKinect
 
             _sensor.SkeletonStream.Enable();
 
+            AdditionalSensorSetup();
+
             _sensor.Start();
 
             Application.Run();
@@ -27,10 +29,14 @@ namespace HelloKinect
             return 0;
         }
 
-        public static Skeleton[] GetSkeletons(SkeletonFrame skeleton)
+        protected virtual void AdditionalSensorSetup()
         {
-            Skeleton[] data = new Skeleton[skeleton.SkeletonArrayLength];
-            skeleton.CopySkeletonDataTo(data);
+        }
+
+        public static Skeleton[] GetSkeletons(SkeletonFrame frame)
+        {
+            Skeleton[] data = new Skeleton[frame.SkeletonArrayLength];
+            frame.CopySkeletonDataTo(data);
             return data;
         }
 

@@ -15,28 +15,29 @@ namespace HelloKinect
     public class ShowCameraCommand : ConsoleCommand
     {
         static private Form EchoForm;
-        bool UsePolling;
+        public ColorImageFormat Format = ColorImageFormat.RawYuvResolution640x480Fps15;
         private List<DateTime> FrameTimes;
 
         public ShowCameraCommand()
         {
             this.IsCommand("show-camera");
+            this.HasOption<ColorImageFormat>("f=", "Format (one of " + string.Join(", ", Enum.GetValues(typeof (ColorImageFormat)).Cast<ColorImageFormat>().Select(v => v.ToString())) + ")", v => Format = v);
             
             FrameTimes = new List<DateTime>();
         }
 
         public override int Run(string[] remainingArguments)
         {
-            EchoForm = new Form();
-
-            EchoForm.Width = 640;
-            EchoForm.Height = 480;
-
-            EchoForm.Show();
-
             var sensor = KinectUtil.GetKinectSensor();
 
-            sensor.ColorStream.Enable(ColorImageFormat.RawYuvResolution640x480Fps15);
+            sensor.ColorStream.Enable(Format);
+
+            EchoForm = new Form();
+
+            EchoForm.Width = sensor.ColorStream.FrameWidth;
+            EchoForm.Height = sensor.ColorStream.FrameHeight;
+
+            EchoForm.Show();
 
             sensor.ColorFrameReady += sensor_ColorFrameReady;
 
@@ -86,7 +87,7 @@ namespace HelloKinect
         }
 
         // http://stackoverflow.com/questions/10848190/convert-kinect-colorframe-to-bitmap
-        Bitmap ImageToBitmap(ColorImageFrame Image)
+        public static Bitmap ImageToBitmap(ColorImageFrame Image)
         {
             byte[] pixeldata = new byte[Image.PixelDataLength];
             Image.CopyPixelDataTo(pixeldata);
