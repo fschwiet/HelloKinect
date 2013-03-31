@@ -37,7 +37,8 @@ namespace HelloKinect
             {
                 ChangeAngle(sensor, (int)(start + step * i));
 
-                var clipped = GetClipped(sensor);
+                //  Not going to wait as long if we've tracked the user a previous angle
+                var clipped = GetClipped(sensor, clippedTracking.Any() ? 3 : 10);
 
                 if (clipped != null)
                 {
@@ -63,10 +64,8 @@ namespace HelloKinect
             return 0;
         }
 
-        private static List<FrameEdges> GetClipped(KinectSensor sensor)
+        private static List<FrameEdges> GetClipped(KinectSensor sensor, int attemptsLeft)
         {
-            var attemptsLeft = 10;
-
             while (true)
             {
                 using (var frame = sensor.SkeletonStream.OpenNextFrame(1000))
