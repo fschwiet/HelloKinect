@@ -53,6 +53,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AimCommand.cs" />
     <Compile Include="DrawSkeletonCommand.cs" />
     <Compile Include="HelloSkeletonCommand.cs" />
     <Compile Include="JointStructure.cs" />

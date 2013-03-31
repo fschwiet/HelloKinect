@@ -1,4 +1,7 @@
-﻿using System.Windows.Forms;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows.Forms;
 using ManyConsole;
 using Microsoft.Kinect;
 
@@ -22,6 +25,26 @@ namespace HelloKinect
             Application.Run();
 
             return 0;
+        }
+
+        protected static Skeleton[] GetSkeletons(SkeletonFrame skeleton)
+        {
+            Skeleton[] data = new Skeleton[skeleton.SkeletonArrayLength];
+            skeleton.CopySkeletonDataTo(data);
+            return data;
+        }
+
+        protected static List<FrameEdges> GetClippedEdges(Skeleton skeleton)
+        {
+            List<FrameEdges> clipped = new List<FrameEdges>();
+
+            foreach (var edge in Enum.GetValues(typeof (FrameEdges)).Cast<FrameEdges>())
+            {
+                if (skeleton.ClippedEdges.HasFlag(edge))
+                    clipped.Add(edge);
+            }
+
+            return clipped;
         }
     }
 }

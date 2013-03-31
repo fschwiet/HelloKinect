@@ -11,6 +11,8 @@ namespace HelloKinect
     public class DrawSkeletonCommand : SkeletonCommandBase
     {
         protected Form _displayForm;
+        const int DrawWidth = 640;
+        const int DrawHeight = 480;
 
         public DrawSkeletonCommand()
         {
@@ -21,8 +23,8 @@ namespace HelloKinect
         {
             _displayForm = new Form();
 
-            _displayForm.Width = 640;
-            _displayForm.Height = 480;
+            _displayForm.Width = DrawWidth;
+            _displayForm.Height = DrawHeight;
 
             _displayForm.Show();
 
@@ -33,10 +35,9 @@ namespace HelloKinect
         {
             try
             {
-                using (var skeleton = e.OpenSkeletonFrame())
+                using (var frame = e.OpenSkeletonFrame())
                 {
-                    Skeleton[] data = new Skeleton[skeleton.SkeletonArrayLength];
-                    skeleton.CopySkeletonDataTo(data);
+                    var data = GetSkeletons(frame);
 
                     var skele = data.FirstOrDefault();
 
@@ -57,6 +58,8 @@ namespace HelloKinect
 
                         var points = ExtractScreenPoints(jointTypes, skele);
 
+                        DrawClippedEdges(skele, graphics);
+
                         DrawJointConnections(jointTypes, points, graphics);
 
                         DrawJoints(points, graphics);
@@ -66,6 +69,26 @@ namespace HelloKinect
             catch (Exception exception)
             {
                 Console.WriteLine(exception);
+            }
+        }
+
+        Dictionary<FrameEdges,Tuple<Point,Point>> EdgeHazardLights = new Dictionary<FrameEdges, Tuple<Point, Point>>()
+        {
+            {FrameEdges.Bottom, new Tuple<Point, Point>(new Point(0,0), new Point(DrawWidth-1,0))},
+            {FrameEdges.Top, new Tuple<Point, Point>(new Point(0,DrawHeight-1), new Point(DrawWidth-1,DrawHeight-1))},
+            {FrameEdges.Left, new Tuple<Point, Point>(new Point(0, DrawHeight-1), new Point(0,0))},
+            {FrameEdges.Right, new Tuple<Point, Point>(new Point(DrawWidth-1,0),new Point(DrawWidth-1,DrawHeight-1))}
+        };
+
+        private void DrawClippedEdges(Skeleton skele, Graphics graphics)
+        {
+            foreach (var edge in GetClippedEdges(skele))
+            {
+                if (EdgeHazardLights.ContainsKey(edge))
+                {
+                    var coordinates = EdgeHazardLights[edge];
+                    graphics.DrawLine(new Pen(Color.Yellow, 20), coordinates.Item1, coordinates.Item2);
+                }
             }
         }
 
@@ -88,6 +111,8 @@ namespace HelloKinect
             {
                 if (!JointStructure.Connections.ContainsKey(startJoint))
                     continue;
+
+                DepthImagePoint p = points[startJoint].Item2;
 
                 if (!points[startJoint].Item1.HasValue)
                     continue;
