@@ -53,7 +53,8 @@ namespace HelloKinect
         {
             using (ColorImageFrame frame = e.OpenColorImageFrame())
             {
-                HandleFrame(frame);
+                if (frame != null)
+                    HandleFrame(frame);
             }
         }
 

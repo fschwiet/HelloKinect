@@ -55,7 +55,9 @@ namespace HelloKinect
                 }
             }
 
-            var chosenAngle = clippedTracking.Keys.First(key => !clippedTracking[key].Any());
+            Func<int, bool> unclippedDetector = key => !clippedTracking[key].Any();
+
+            var chosenAngle = (clippedTracking.Keys.First(unclippedDetector) + clippedTracking.Keys.Last(unclippedDetector)) / 2;
 
             Console.WriteLine("Aiming for " + chosenAngle);
 
