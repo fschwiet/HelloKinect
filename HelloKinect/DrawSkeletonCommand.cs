@@ -15,6 +15,7 @@ namespace HelloKinect
         const int DrawHeight = 480;
         private const DepthImageFormat DepthImageFormat = Microsoft.Kinect.DepthImageFormat.Resolution640x480Fps30;
         private const ColorImageFormat ColorImageFormat = Microsoft.Kinect.ColorImageFormat.RgbResolution640x480Fps30;
+        public DrawMessage nextMessage;
 
         Dictionary<FrameEdges, Tuple<Point, Point>> EdgeHazardLights = new Dictionary<FrameEdges, Tuple<Point, Point>>()
         {
@@ -37,6 +38,10 @@ namespace HelloKinect
         public override int Run(string[] remainingArguments)
         {
             _displayForm = new DoubleBufferedForm();
+            var t = new Timer();
+            t.Interval = 100;
+            t.Tick += RedrawFrame;
+            t.Enabled = true;
 
             var delta = _displayForm.Size - _displayForm.ClientSize;
             
@@ -45,6 +50,49 @@ namespace HelloKinect
             _displayForm.Show();
 
             return base.Run(remainingArguments);
+        }
+
+        private void RedrawFrame(object sender, EventArgs e)
+        {
+            var message = nextMessage;
+
+            if (message == null)
+                return;
+
+            using (var graphics = _displayForm.CreateGraphics())
+            {
+                if (message.bitmap != null)
+                    graphics.DrawImage(message.bitmap, 0, 0, _displayForm.ClientSize.Width, _displayForm.ClientSize.Height);
+
+                if (message.skele == null || message.skele.TrackingState == SkeletonTrackingState.NotTracked)
+                {
+                    graphics.DrawString("untracked", new Font(FontFamily.GenericSerif, 40), new SolidBrush(Color.Coral), DrawWidth / 4, DrawHeight / 4);
+                    return;
+                }
+
+                DrawClippedEdges(message.skele, graphics);
+
+                DrawJoints(message.points, graphics);
+
+                DrawJointConnections(message.jointTypes, message.points, graphics);
+            }
+        }
+
+        public class DrawMessage : IDisposable
+        {
+            public Bitmap bitmap;
+            public Skeleton skele;
+            public IEnumerable<JointType> jointTypes;
+            public Dictionary<JointType, Tuple<Color?, DepthImagePoint>> points;
+
+            public void Dispose()
+            {
+                if (bitmap != null)
+                {
+                    bitmap.Dispose();
+                    bitmap = null;
+                }
+            }
         }
 
         protected override void SkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
@@ -61,37 +109,26 @@ namespace HelloKinect
                     data = GetSkeletons(frame);
                 }
 
-                using (var graphics = _displayForm.CreateGraphics())
+                var message = new DrawMessage();
+
+                using (var cameraFrame = _sensor.ColorStream.OpenNextFrame(10))
                 {
-                    using (var cameraFrame = _sensor.ColorStream.OpenNextFrame(10))
+                    if (cameraFrame != null)
                     {
-                        if (cameraFrame != null)
-                        {
-                            using (var bitmap = ShowCameraCommand.ImageToBitmap(cameraFrame))
-                            {
-                                graphics.DrawImage(bitmap, 0, 0, DrawWidth - 1, DrawHeight - 1);
-                            }
-                        }
+                        message.bitmap = ShowCameraCommand.ImageToBitmap(cameraFrame);
                     }
-
-                    var skele = data.FirstOrDefault();
-
-                    if (skele == null || skele.TrackingState != SkeletonTrackingState.Tracked)
-                    {
-                        graphics.DrawString("untracked", new Font(FontFamily.GenericSerif,40),new SolidBrush(Color.Coral), DrawWidth / 4, DrawHeight / 4);
-                        return;
-                    }
-
-                    var jointTypes = Enum.GetValues(typeof (JointType)).Cast<JointType>();
-
-                    var points = ExtractScreenPoints(jointTypes, skele);
-
-                    DrawClippedEdges(skele, graphics);
-
-                    DrawJoints(points, graphics);
-
-                    DrawJointConnections(jointTypes, points, graphics);
                 }
+
+                message.skele = data.FirstOrDefault();
+
+                if (message.skele != null && message.skele.TrackingState != SkeletonTrackingState.NotTracked)
+                {
+                    message.jointTypes = Enum.GetValues(typeof(JointType)).Cast<JointType>();
+
+                    message.points = ExtractScreenPoints(message.jointTypes, message.skele);                    
+                }
+
+                nextMessage = message;
             }
             catch (Exception exception)
             {
