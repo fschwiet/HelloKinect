@@ -39,7 +39,7 @@ namespace HelloKinect
         {
             _displayForm = new DoubleBufferedForm();
             var t = new Timer();
-            t.Interval = 100;
+            t.Interval = 200;
             t.Tick += RedrawFrame;
             t.Enabled = true;
 
@@ -61,8 +61,13 @@ namespace HelloKinect
 
             using (var graphics = _displayForm.CreateGraphics())
             {
-                if (message.bitmap != null)
-                    graphics.DrawImage(message.bitmap, 0, 0, _displayForm.ClientSize.Width, _displayForm.ClientSize.Height);
+                using (var cameraFrame = _sensor.ColorStream.OpenNextFrame(10))
+                {
+                    if (cameraFrame != null)
+                    {
+                        graphics.DrawImage(ShowCameraCommand.ImageToBitmap(cameraFrame), 0, 0, _displayForm.ClientSize.Width, _displayForm.ClientSize.Height);
+                    }
+                }
 
                 if (message.skele == null || message.skele.TrackingState == SkeletonTrackingState.NotTracked)
                 {
@@ -78,21 +83,11 @@ namespace HelloKinect
             }
         }
 
-        public class DrawMessage : IDisposable
+        public class DrawMessage
         {
-            public Bitmap bitmap;
             public Skeleton skele;
             public IEnumerable<JointType> jointTypes;
             public Dictionary<JointType, Tuple<Color?, DepthImagePoint>> points;
-
-            public void Dispose()
-            {
-                if (bitmap != null)
-                {
-                    bitmap.Dispose();
-                    bitmap = null;
-                }
-            }
         }
 
         protected override void SkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
@@ -110,14 +105,6 @@ namespace HelloKinect
                 }
 
                 var message = new DrawMessage();
-
-                using (var cameraFrame = _sensor.ColorStream.OpenNextFrame(10))
-                {
-                    if (cameraFrame != null)
-                    {
-                        message.bitmap = ShowCameraCommand.ImageToBitmap(cameraFrame);
-                    }
-                }
 
                 message.skele = data.FirstOrDefault();
 
